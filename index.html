@@ -28,7 +28,6 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-start;
       background: #ede6d6;
     }
     .header-bar {
@@ -136,32 +135,32 @@
       touch-action: none;
     }
     .subtitle-bar {
-      position: absolute;
-      top: 48px;
-      left: 0;
+      position: relative;
       width: 100%;
       height: 2.3em;
-      pointer-events: none;
-      z-index: 11;
       background: linear-gradient(90deg,#ede6d6bb 0%,#ede6d600 12%,#ede6d600 88%,#ede6d6bb 100%);
       font-family: Arial, sans-serif;
-      font-size: 1.25em;
+      font-size: 1.22em;
       color: #3e2d14;
       font-weight: bold;
       display: flex;
       align-items: center;
       overflow: hidden;
-      padding: 0 1vw;
+      justify-content: flex-start;
+      z-index: 13;
+      min-height: 2em;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      pointer-events: none;
     }
     .subtitle-scroll-text {
-      white-space: nowrap;
       position: absolute;
-      left: 0;
-      top: 0;
+      white-space: nowrap;
+      top: 0; left: 0;
       will-change: transform;
-      transition: none;
-      pointer-events: none;
-      text-shadow: 0 2px 6px #ede6d6bb, 0 1px 1px #fff;
+      text-shadow: 0 2px 4px #ede6d6bb, 0 1px 1px #fff;
+      pointer-events:none;
     }
     .jump-btn-bar {
       width: 100%;
@@ -279,50 +278,15 @@
   <div id="app-root"></div>
   <audio id="bg-music" src="./audio/bg-music-jerusalem.mp3" loop preload="auto"></audio>
   <script>
-    // -- Asset paths and level list --
+    // --- Constants and asset paths ---
     const LEVELS = [
-      {
-        key: "gen1_26-31",
-        title: "Genesis 1:26–31",
-        audio: "./audio/gen1_26-31.mp3",
-        vtt: "./subs/gen1_26-31.vtt"
-      },
-      {
-        key: "gen3_1-13",
-        title: "Genesis 3:1–13",
-        audio: "./audio/gen3_1-13.mp3",
-        vtt: "./subs/gen3_1-13.vtt"
-      },
-      {
-        key: "gen6_5-9_7_17-8_1",
-        title: "Genesis 6:5–9, 7:17–8:1",
-        audio: "./audio/gen6_5-9_7_17-8_1.mp3",
-        vtt: "./subs/gen6_5-9_7_17-8_1.vtt"
-      },
-      {
-        key: "gen12_1-9",
-        title: "Genesis 12:1–9",
-        audio: "./audio/gen12_1-9.mp3",
-        vtt: "./subs/gen12_1-9.vtt"
-      },
-      {
-        key: "gen22_1-14",
-        title: "Genesis 22:1–14",
-        audio: "./audio/gen22_1-14.mp3",
-        vtt: "./subs/gen22_1-14.vtt"
-      },
-      {
-        key: "gen37_1-11",
-        title: "Genesis 37:1–11",
-        audio: "./audio/gen37_1-11.mp3",
-        vtt: "./subs/gen37_1-11.vtt"
-      },
-      {
-        key: "gen45_1-15",
-        title: "Genesis 45:1–15",
-        audio: "./audio/gen45_1-15.mp3",
-        vtt: "./subs/gen45_1-15.vtt"
-      }
+      { key: "gen1_26-31", title: "Genesis 1:26–31", audio: "./audio/gen1_26-31.mp3", vtt: "./subs/gen1_26-31.vtt" },
+      { key: "gen3_1-13", title: "Genesis 3:1–13", audio: "./audio/gen3_1-13.mp3", vtt: "./subs/gen3_1-13.vtt" },
+      { key: "gen6_5-9_7_17-8_1", title: "Genesis 6:5–9, 7:17–8:1", audio: "./audio/gen6_5-9_7_17-8_1.mp3", vtt: "./subs/gen6_5-9_7_17-8_1.vtt" },
+      { key: "gen12_1-9", title: "Genesis 12:1–9", audio: "./audio/gen12_1-9.mp3", vtt: "./subs/gen12_1-9.vtt" },
+      { key: "gen22_1-14", title: "Genesis 22:1–14", audio: "./audio/gen22_1-14.mp3", vtt: "./subs/gen22_1-14.vtt" },
+      { key: "gen37_1-11", title: "Genesis 37:1–11", audio: "./audio/gen37_1-11.mp3", vtt: "./subs/gen37_1-11.vtt" },
+      { key: "gen45_1-15", title: "Genesis 45:1–15", audio: "./audio/gen45_1-15.mp3", vtt: "./subs/gen45_1-15.vtt" }
     ];
     const ASSETS = {
       heart: "./img/heart.png",
@@ -336,562 +300,338 @@
     const FONT_FAMILY = "'BronySiswad', Arial, sans-serif";
 
     // --- Utilities ---
-    const sleep = ms => new Promise(res => setTimeout(res, ms));
     const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
-
-    // --- Game state and persistent storage ---
     let persistentScores = {};
-    try {
-      persistentScores = JSON.parse(localStorage.getItem('bible-runner-scores')||'{}');
-    } catch {}
-    function saveScores() {
-      localStorage.setItem('bible-runner-scores', JSON.stringify(persistentScores));
-    }
-
-    // --- Preload images and audio ---
-    function preloadImage(src) {
-      return new Promise(res => {
-        const img = new window.Image();
-        img.onload = () => res(img);
-        img.onerror = () => res(null);
-        img.src = src;
-      });
-    }
-
+    try { persistentScores = JSON.parse(localStorage.getItem('bible-runner-scores')||'{}'); } catch {}
+    function saveScores() { localStorage.setItem('bible-runner-scores', JSON.stringify(persistentScores)); }
+    function preloadImage(src) { return new Promise(res => { const img = new window.Image(); img.onload = () => res(img); img.onerror = () => res(null); img.src = src; }); }
     async function preloadAssets() {
       const images = {};
-      for (const [key, src] of Object.entries(ASSETS)) {
-        images[key] = await preloadImage(src);
-      }
+      for (const [key, src] of Object.entries(ASSETS)) { images[key] = await preloadImage(src); }
       return images;
     }
-
-    // --- WebVTT parsing ---
     function parseVTT(raw) {
-      // Simple VTT parser: returns [{start,end,text},...]
       const lines = raw.replace(/\r/g,'').split('\n');
-      let cues = [];
-      let i = 0;
+      let cues = [], i = 0;
       while(i < lines.length) {
-        if (lines[i].match(/^\d+$/)) i++; // skip cue number
+        if (lines[i].match(/^\d+$/)) i++;
         let timing = lines[i];
         if (timing && timing.includes('-->')) {
           let [start, end] = timing.split('-->').map(x=>x.trim());
-          i++;
-          let text = '';
-          while(lines[i] && lines[i].trim()!=='') {
-            text += (text?' ':'') + lines[i].trim();
-            i++;
-          }
-          cues.push({
-            start: vttTimeToSeconds(start),
-            end: vttTimeToSeconds(end),
-            text
-          });
-        }
-        i++;
+          i++; let text = '';
+          while(lines[i] && lines[i].trim()!=='') { text += (text?' ':'') + lines[i].trim(); i++; }
+          cues.push({ start: vttTimeToSeconds(start), end: vttTimeToSeconds(end), text });
+        } i++;
       }
       return cues;
     }
-    function vttTimeToSeconds(s) {
-      let m = s.match(/(\d+):(\d+):([\d.]+)/);
-      if (!m) return 0;
-      return parseInt(m[1])*3600 + parseInt(m[2])*60 + parseFloat(m[3]);
-    }
-
-    // --- Main rendering + UI logic ---
-    const appRoot = document.getElementById('app-root');
-    let images = {};
-    let gameAudio = null, gameAudioLevelKey = null;
-    let gameState = null;
-    let bgMusic = document.getElementById('bg-music');
-    // For subtitle position
-    let subtitleInterval = null;
-    let subtitleBar = null;
-    let subtitleScrollText = null;
-
-    // --- Responsive resize logic ---
+    function vttTimeToSeconds(s) { let m = s.match(/(\d+):(\d+):([\d.]+)/); if (!m) return 0; return parseInt(m[1])*3600 + parseInt(m[2])*60 + parseFloat(m[3]); }
     function getGameDims() {
-      // 16:9 aspect, max width 900, min height 250
       let ww = window.innerWidth, wh = window.innerHeight;
       let w = Math.min(ww, 900);
       let h = Math.max(Math.min(Math.round(w * 9/16), wh * 0.62), 250);
-      // If mobile portrait, use more height
-      if (ww < 600 && wh > ww) {
-        h = Math.max(Math.round(ww * 1.05), 250);
-      }
+      if (ww < 600 && wh > ww) { h = Math.max(Math.round(ww * 1.05), 250); }
       return {w, h};
     }
 
-    // --- Main Menu Screen ---
+    // --- Main Menu ---
     function renderMainMenu() {
       document.title = "Bible Runner: Read, Listen, Play!";
       appRoot.innerHTML = '';
-      const title = document.createElement('div');
-      title.className = 'game-title';
-      title.innerText = "Bible Runner: Read, Listen, Play!";
-      appRoot.appendChild(title);
-
-      const menu = document.createElement('div');
-      menu.className = 'main-menu';
-
-      // Level list
-      const list = document.createElement('ul');
-      list.className = 'level-list';
+      const title = document.createElement('div'); title.className = 'game-title';
+      title.innerText = "Bible Runner: Read, Listen, Play!"; appRoot.appendChild(title);
+      const menu = document.createElement('div'); menu.className = 'main-menu';
+      const list = document.createElement('ul'); list.className = 'level-list';
       for (const [idx, level] of LEVELS.entries()) {
-        const li = document.createElement('li');
-        li.tabIndex = 0;
-        li.setAttribute('role','button');
+        const li = document.createElement('li'); li.tabIndex = 0; li.setAttribute('role','button');
         li.setAttribute('aria-label', `Play ${level.title}`);
         li.addEventListener('click', () => showLevelDialog(level));
-        li.addEventListener('keydown', (e) => {
-          if (e.key === "Enter"||e.key===" ") {
-            e.preventDefault();
-            showLevelDialog(level);
-          }
-        });
-        li.innerHTML = `
-          <span>${level.title}</span>
-          <span class="level-status" id="level-status-${level.key}">
-            ${renderLevelStatus(level.key)}
-          </span>
-        `;
+        li.addEventListener('keydown', (e) => { if (e.key === "Enter"||e.key===" ") { e.preventDefault(); showLevelDialog(level); } });
+        li.innerHTML = `<span>${level.title}</span>
+        <span class="level-status" id="level-status-${level.key}">${renderLevelStatus(level.key)}</span>`;
         list.appendChild(li);
       }
       menu.appendChild(list);
-
-      // How to play
-      const how = document.createElement('div');
-      how.className = 'how-to-play';
-      how.innerHTML = `
-        <b>How to Play:</b><br>
+      const how = document.createElement('div'); how.className = 'how-to-play';
+      how.innerHTML = `<b>How to Play:</b><br>
         1. Choose any Bible verse to play.<br>
         2. Collect <img src="${ASSETS.bread}" style="height:1.1em;vertical-align:-0.2em;"> bread along the way (3 per level).<br>
         3. Avoid <img src="${ASSETS.obstacle}" style="height:1.1em;vertical-align:-0.2em;"> obstacles! You have <img src="${ASSETS.heart}" style="height:1.1em;vertical-align:-0.2em;"> 3 lives.<br>
         4. Tap 'Jump' button or press spacebar to jump.<br>
         5. Read and listen to the Bible as you play. Subtitles scroll at the top.<br>
-        6. Levels are always unlocked—try for all 3 breads!
-      `;
+        6. Levels are always unlocked—try for all 3 breads!`;
       menu.appendChild(how);
-
       appRoot.appendChild(menu);
-      // Pause bg music if playing
-      bgMusic.pause();
-      bgMusic.volume = 0.5;
-      // Update statuses
-      setTimeout(() => {
-        for (const level of LEVELS) {
-          const el = document.getElementById('level-status-'+level.key);
-          if (el) el.innerHTML = renderLevelStatus(level.key);
-        }
-      }, 200);
+      document.getElementById('bg-music').pause();
+      setTimeout(() => { for (const level of LEVELS) {
+        const el = document.getElementById('level-status-'+level.key);
+        if (el) el.innerHTML = renderLevelStatus(level.key);
+      } }, 200);
     }
-
     function renderLevelStatus(levelKey) {
-      // If played, show breads; else 3 hearts-outline
       const data = persistentScores[levelKey];
-      if (!data) {
-        return `<img src="${ASSETS.heartOutline}" style="height:1.2em;">`.repeat(3);
-      }
+      if (!data) return `<img src="${ASSETS.heartOutline}" style="height:1.2em;">`.repeat(3);
       let breads = data.breads||0;
       return `<img src="${ASSETS.bread}" style="height:1.2em;">`.repeat(breads)
             + `<img src="${ASSETS.heartOutline}" style="height:1.2em;">`.repeat(3-breads);
     }
-
-    // --- Level Dialog ---
+    // --- Modal ---
+    let modalDiv = null;
+    function showModal(html, btns) {
+      if (modalDiv) modalDiv.remove();
+      modalDiv = document.createElement('div'); modalDiv.className = 'modal-bg';
+      const modal = document.createElement('div'); modal.className = 'modal'; modal.innerHTML = html;
+      const btnBar = document.createElement('div'); btnBar.className = 'btns';
+      for (const b of btns) {
+        const btn = document.createElement('button'); btn.className = 'btn'; btn.innerText = b.label;
+        btn.onclick = b.action; if (b.primary) btn.style.background="#f7e5a5"; btnBar.appendChild(btn);
+      }
+      modal.appendChild(btnBar); modalDiv.appendChild(modal); document.body.appendChild(modalDiv);
+    }
+    function hideModal() { if (modalDiv) modalDiv.remove(); modalDiv = null; }
     function showLevelDialog(level) {
-      showModal(`
-        <h2>${level.title}</h2>
+      showModal(`<h2>${level.title}</h2>
         <div style="margin:0.7em 0 1.1em 0;">
           <b>Collect as much ancient bread as you can.<br>
           Avoid obstacles.<br>
           3 lives per run!</b>
-        </div>
-      `, [
-        {label:"Start Game", action:()=>{hideModal(); startGame(level);}, primary:true},
+        </div>`, [
+        {label:"Start Game", action:()=>{hideModal(); renderGameScreen(level);}, primary:true},
         {label:"Main Menu", action:()=>{hideModal(); renderMainMenu();}}
       ]);
     }
 
-    // --- Modal logic ---
-    let modalDiv = null;
-    function showModal(html, btns) {
-      if (modalDiv) modalDiv.remove();
-      modalDiv = document.createElement('div');
-      modalDiv.className = 'modal-bg';
-      const modal = document.createElement('div');
-      modal.className = 'modal';
-      modal.innerHTML = html;
-      const btnBar = document.createElement('div');
-      btnBar.className = 'btns';
-      for (const b of btns) {
-        const btn = document.createElement('button');
-        btn.className = 'btn';
-        btn.innerText = b.label;
-        btn.onclick = b.action;
-        if (b.primary) btn.style.background="#f7e5a5";
-        btnBar.appendChild(btn);
-      }
-      modal.appendChild(btnBar);
-      modalDiv.appendChild(modal);
-      document.body.appendChild(modalDiv);
-    }
-    function hideModal() {
-      if (modalDiv) modalDiv.remove();
-      modalDiv = null;
+    // --- Game Screen + Start ---
+    let images = {}, gameAudio = null, gameAudioLevelKey = null, gameState = null;
+    let subtitleBar = null, subtitleScrollText = null, subtitleScrollAnim = null, subtitleCurrentCueIdx = -1;
+
+    function renderGameScreen(level) {
+      appRoot.innerHTML = '';
+      // Header
+      const header = document.createElement('div'); header.className = 'header-bar';
+      header.innerHTML = `<div class="left" id="lives-bar">
+        <img src="${ASSETS.heart}" style="height:1.3em;"><img src="${ASSETS.heart}" style="height:1.3em;"><img src="${ASSETS.heart}" style="height:1.3em;">
+      </div>
+      <div style="text-align:center;flex:1;font-size:1.04em;font-family:${FONT_FAMILY};color:#82623d;">Bible Runner: ${level.title}</div>
+      <div class="right" id="bread-bar">
+        <img src="${ASSETS.bread}" style="height:1.3em;opacity:0.35;">
+        <img src="${ASSETS.bread}" style="height:1.3em;opacity:0.35;">
+        <img src="${ASSETS.bread}" style="height:1.3em;opacity:0.35;">
+      </div>`;
+      appRoot.appendChild(header);
+
+      // Game container
+      const gameContainer = document.createElement('div'); gameContainer.className = 'game-container';
+      const canvas = document.createElement('canvas'); canvas.id = 'game-canvas';
+      let {w,h} = getGameDims(); canvas.width = w; canvas.height = h;
+      gameContainer.appendChild(canvas);
+
+      // Subtitle bar
+      const subtitleBarDiv = document.createElement('div');
+      subtitleBarDiv.className = 'subtitle-bar'; subtitleBarDiv.id = 'subtitle-bar';
+      gameContainer.appendChild(subtitleBarDiv);
+      appRoot.appendChild(gameContainer);
+
+      // Jump button
+      const jumpBar = document.createElement('div'); jumpBar.className = 'jump-btn-bar';
+      jumpBar.innerHTML = `<button class="jump-btn" id="jump-btn" style="user-select:none;">JUMP</button>`;
+      appRoot.appendChild(jumpBar);
+
+      // Modal, after close, run setup
+      showModal(`<h2>${level.title}</h2>
+        <div style="margin:0.6em 0 1.1em 0;">
+          Tap 'Jump' or press the space bar to jump.<br>
+          Collect bread, avoid obstacles.<br>
+          The level ends when the Bible verse finishes.
+        </div>`, [
+        {label:"Start Game", action:()=>{hideModal(); actuallyStartGame(level);}, primary:true}
+      ]);
     }
 
-    // --- Game Logic ---
-    async function startGame(level) {
-      document.title = "Bible Runner: " + level.title;
-      // Load images if not already loaded
+    async function actuallyStartGame(level) {
+      // Preload assets on first play
       if (!images.heart) images = await preloadAssets();
-
-      // Load VTT and parse
-      let vttRaw = '';
+      // Fetch vtt
+      let vttRaw = '', vttCues = [];
       try {
-        vttRaw = await fetch(level.vtt).then(r=>r.text());
-      } catch (e) { alert("Couldn't load subtitles."); renderMainMenu(); return; }
-      const vttCues = parseVTT(vttRaw);
-
-      // Load audio
+        vttRaw = await fetch(level.vtt).then(r=>{ if (!r.ok) throw new Error("Not found"); return r.text(); });
+        vttCues = parseVTT(vttRaw); if (!vttCues.length) throw new Error("No cues");
+      } catch (e) {
+        showModal(`<h2>Couldn't load subtitles</h2>
+          <div style="margin:1em;">Please check that <code>${level.vtt}</code> exists and is a valid .vtt file.<br>
+          (Your browser's console may provide more info.)</div>`, [
+          {label:"Main Menu", action:()=>{hideModal(); renderMainMenu();}, primary:true}
+        ]); return;
+      }
+      // Audio
       if (gameAudio) { gameAudio.pause(); gameAudio = null; }
-      gameAudio = new Audio(level.audio);
-      gameAudio.preload = 'auto';
-      gameAudio.volume = 1.0;
-      gameAudioLevelKey = level.key;
-
-      // Prep for gameplay
+      gameAudio = new Audio(level.audio); gameAudio.preload = 'auto'; gameAudio.volume = 1.0; gameAudioLevelKey = level.key;
+      // World setup
       let {w:canvasW, h:canvasH} = getGameDims();
-
-      // Bread/award positions: 1/4, 2/4, 1 (end)
       const breadPositions = [0.22, 0.55, 0.97];
-      // Obstacles: randomly spread, but not at bread positions, at child-friendly speed
       const numObstacles = 8;
       let obstaclePositions = [];
       while (obstaclePositions.length < numObstacles) {
         let p = Math.random()*0.82 + 0.08;
         if (breadPositions.every(bp => Math.abs(bp-p)>0.11)) obstaclePositions.push(p);
-      }
-      obstaclePositions.sort((a,b)=>a-b);
-
-      // Game state
+      } obstaclePositions.sort((a,b)=>a-b);
       gameState = {
-        phase: 'init', // 'init','running','ended','fail'
-        levelKey: level.key,
-        scoreBreads: 0,
-        scoreHearts: 3,
-        bestBreads: persistentScores[level.key]?.breads||0,
-        bestHearts: persistentScores[level.key]?.hearts||0,
-        canvasW, canvasH,
-        jumpState: 'idle', // 'idle'|'rising'|'falling'
-        jumpT: 0,
-        jumpY: 0,
-        jumpStart: 0,
-        jumpDuration: 0.84,
-        playerX: Math.round(canvasW*0.13),
-        playerYBase: canvasH-120,
-        isJumping: false,
-        running: false,
-        bgScrollX: 0,
-        time: 0,
-        started: false,
+        phase: 'running', levelKey: level.key, scoreBreads: 0, scoreHearts: 3,
+        bestBreads: persistentScores[level.key]?.breads||0, bestHearts: persistentScores[level.key]?.hearts||0,
+        canvasW, canvasH, jumpState: 'idle', jumpT: 0, jumpY: 0, jumpStart: 0,
+        jumpDuration: 0.84, playerX: Math.round(canvasW*0.13), playerYBase: canvasH-120,
+        isJumping: false, running: true, bgScrollX: 0, time: 0, started: true,
         breads: breadPositions.map(bp=>({xFrac:bp, collected:false})),
         obstacles: obstaclePositions.map(op=>({xFrac:op, hit:false})),
-        vttCues,
-        subtitle: "",
-        subtitleIdx: 0,
-        subtitleScrollX: canvasW,
-        subtitleActive: false,
-        subtitleText: "",
-        subtitleStart: 0,
-        subtitleEnd: 0,
-        subtitleDur: 0,
-        subtitleW: 0,
-        subtitleScrollSpeed: 0,
-        scrollOffset: 0, // how far the world has moved left
-        worldLength: 1, // 1.0 = end of level
-        ended: false,
-        breadAwarded: 0
+        vttCues, worldLength: 1, ended: false, breadAwarded: 0
       };
-
-      // UI
-      renderGameScreen(level);
-
-      // Wait for 'Start Game' click
-      let startBtn = document.getElementById('game-start-btn');
-      startBtn.onclick = startGameBtn;
-      startBtn.focus();
-
-      function startGameBtn() {
-        // Start game: play bg music, set up audio, update state
-        bgMusic.volume = 0.5;
-        if (bgMusic.paused) { try { bgMusic.play(); } catch{} }
-        gameAudio.currentTime = 0;
-        gameAudio.volume = 1.0;
-        gameAudio.play();
-        gameState.phase = 'running';
-        gameState.started = true;
-        startBtn.disabled = true;
-        gameAudio.onended = () => { if (!gameState.ended) endGameSuccess(); };
-        // Start rendering + input
-        requestAnimationFrame(gameLoop);
-      }
-
-      // Resize handler
-      window.onresize = () => {
-        let {w,h} = getGameDims();
-        gameState.canvasW = w; gameState.canvasH = h;
-        let canvas = document.getElementById('game-canvas');
-        canvas.width = w; canvas.height = h;
-      };
-
-      // Jump input
-      window.onkeydown = e => {
-        if (e.key===" " && gameState.phase === 'running') triggerJump();
-      };
+      // Audio, music, subtitle
+      let bgMusic = document.getElementById('bg-music');
+      bgMusic.volume = 0.5; if (bgMusic.paused) { try { bgMusic.play(); } catch{} }
+      gameAudio.currentTime = 0; gameAudio.volume = 1.0; gameAudio.play();
+      gameAudio.onended = () => { if (!gameState.ended) endGameSuccess(level); };
+      setupSubtitleBar(gameAudio, vttCues);
+      // Input
+      window.onkeydown = e => { if (e.key===" " && gameState.phase === 'running') triggerJump(); };
       document.getElementById('jump-btn').onclick = () => { if (gameState.phase==='running') triggerJump(); };
-
       function triggerJump() {
         if (gameState.isJumping || gameState.phase!=='running') return;
-        gameState.isJumping = true;
-        gameState.jumpT = 0;
-        gameState.jumpStart = performance.now();
-        gameState.jumpState = 'rising';
+        gameState.isJumping = true; gameState.jumpT = 0; gameState.jumpStart = performance.now(); gameState.jumpState = 'rising';
       }
-
-      // Main game loop
+      // Game loop
       let lastFrame = performance.now();
       function gameLoop(now) {
         if (!gameState.started) return;
-        const dt = Math.min((now-lastFrame)/1000, 0.045);
-        lastFrame = now;
-        if (gameState.phase==='running') {
-          updateGame(dt);
-          drawGame();
-          requestAnimationFrame(gameLoop);
-        }
+        const dt = Math.min((now-lastFrame)/1000, 0.045); lastFrame = now;
+        if (gameState.phase==='running') { updateGame(dt); drawGame(); requestAnimationFrame(gameLoop); }
       }
+      requestAnimationFrame(gameLoop);
 
-      // ---- Game update logic ----
       function updateGame(dt) {
         if (!gameAudio) return;
-        // Scroll world:
-        // The player moves from 0 to 1.0 (worldLength) over the audio's duration
         let frac = clamp(gameAudio.currentTime/gameAudio.duration, 0, 1);
-        gameState.scrollOffset = frac * gameState.canvasW * 5; // tune for length
-        // Update jump
+        gameState.scrollOffset = frac * gameState.canvasW * 5;
         if (gameState.isJumping) {
           gameState.jumpT += dt;
           let t = gameState.jumpT / gameState.jumpDuration;
-          if (t < 1) {
-            // Smooth jump arc (sin)
-            gameState.jumpY = -Math.sin(Math.PI*t) * (gameState.canvasH*0.27);
-          } else {
-            gameState.jumpY = 0;
-            gameState.isJumping = false;
-            gameState.jumpState = 'idle';
-          }
+          if (t < 1) gameState.jumpY = -Math.sin(Math.PI*t) * (gameState.canvasH*0.27);
+          else { gameState.jumpY = 0; gameState.isJumping = false; gameState.jumpState = 'idle'; }
         }
-        // Check collisions with obstacles
         for (const obs of gameState.obstacles) {
           if (obs.hit) continue;
           let obsX = obs.xFrac * gameState.canvasW * 5 - gameState.scrollOffset + gameState.playerX;
           if (obsX > gameState.playerX-30 && obsX < gameState.playerX+40) {
-            // Check Y overlap (character base)
             if ((gameState.jumpY > -gameState.canvasH*0.16)) {
-              obs.hit = true;
-              gameState.scoreHearts--;
-              if (gameState.scoreHearts <= 0) {
-                endGameFail();
-                return;
-              }
+              obs.hit = true; gameState.scoreHearts--; updateHeaderBars();
+              if (gameState.scoreHearts <= 0) { endGameFail(level); return; }
             }
           }
         }
-        // Check bread collection
-        for (const [i,bread] of gameState.breads.entries()) {
+        for (const bread of gameState.breads) {
           if (bread.collected) continue;
           let breadX = bread.xFrac * gameState.canvasW * 5 - gameState.scrollOffset + gameState.playerX;
           if (breadX > gameState.playerX-30 && breadX < gameState.playerX+40) {
-            bread.collected = true;
-            gameState.scoreBreads++;
+            bread.collected = true; gameState.scoreBreads++; updateHeaderBars();
           }
-        }
-        // Update subtitle (find current cue)
-        let cue = gameState.vttCues.find(c=>gameAudio.currentTime>=c.start && gameAudio.currentTime<=c.end);
-        if (cue) {
-          if (gameState.subtitleText!==cue.text) {
-            gameState.subtitleText = cue.text;
-            gameState.subtitleStart = cue.start;
-            gameState.subtitleEnd = cue.end;
-            gameState.subtitleDur = cue.end-cue.start;
-            // Subtitle width: estimate for scrolling
-            let ctx = document.getElementById('game-canvas').getContext('2d');
-            ctx.font = "bold "+Math.round(gameState.canvasH*0.07)+"px Arial";
-            gameState.subtitleW = ctx.measureText(cue.text).width+32;
-            gameState.subtitleScrollX = gameState.canvasW;
-            gameState.subtitleScrollSpeed = (gameState.canvasW+gameState.subtitleW) / gameState.subtitleDur;
-          }
-          // Update position
-          let elapsed = gameAudio.currentTime - gameState.subtitleStart;
-          gameState.subtitleScrollX = gameState.canvasW - elapsed*gameState.subtitleScrollSpeed;
         }
       }
-
-      // ---- Drawing logic ----
       function drawGame() {
-        const canvas = document.getElementById('game-canvas');
-        const ctx = canvas.getContext('2d');
+        const canvas = document.getElementById('game-canvas'), ctx = canvas.getContext('2d');
         ctx.clearRect(0,0,canvas.width,canvas.height);
-
-        // Draw background: PNG, stretch to fit canvas
         ctx.drawImage(images.bg, 0, 0, canvas.width, canvas.height);
-
-        // Draw breads
         for (const bread of gameState.breads) {
           if (bread.collected) continue;
           let bx = bread.xFrac * canvas.width * 5 - gameState.scrollOffset + gameState.playerX;
-          if (bx > -60 && bx < canvas.width+60) {
-            ctx.drawImage(images.bread, bx, canvas.height-170, 44,44);
-          }
+          if (bx > -60 && bx < canvas.width+60) ctx.drawImage(images.bread, bx, canvas.height-170, 44,44);
         }
-        // Draw obstacles
         for (const obs of gameState.obstacles) {
           if (obs.hit) continue;
           let ox = obs.xFrac * canvas.width * 5 - gameState.scrollOffset + gameState.playerX;
           if (ox > -60 && ox < canvas.width+60) {
-            ctx.globalAlpha = 1.0;
-            ctx.drawImage(images.obstacle, ox, canvas.height-120, 60, 60);
-            ctx.globalAlpha = 1;
+            ctx.globalAlpha = 1.0; ctx.drawImage(images.obstacle, ox, canvas.height-120, 60, 60); ctx.globalAlpha = 1;
           }
         }
-        // Draw character
         let charImg = gameState.isJumping ? images.charJump : images.charIdle;
         ctx.drawImage(charImg, gameState.playerX, canvas.height-135+gameState.jumpY, 70, 88);
-
-        // Draw scrolling subtitle at top (canvas)
-        if (gameState.subtitleText) {
-          ctx.font = "bold "+Math.round(canvas.height*0.07)+"px Arial";
-          ctx.fillStyle="#3e2d14";
-          ctx.strokeStyle="#fffbe8";
-          ctx.lineWidth = 5;
-          ctx.textBaseline="top";
-          ctx.save();
-          ctx.translate(gameState.subtitleScrollX, 18);
-          ctx.strokeText(gameState.subtitleText, 0, 0);
-          ctx.fillText(gameState.subtitleText, 0, 0);
-          ctx.restore();
-        }
       }
-
-      // --- End game ---
-      function endGameSuccess() {
-        gameState.phase = 'ended';
-        gameState.ended = true;
-        // Save high score for level
+      function endGameSuccess(level) {
+        gameState.phase = 'ended'; gameState.ended = true;
         if (!persistentScores[level.key] || gameState.scoreBreads > (persistentScores[level.key].breads||0)) {
-          persistentScores[level.key] = {breads:gameState.scoreBreads, hearts:gameState.scoreHearts};
-          saveScores();
+          persistentScores[level.key] = {breads:gameState.scoreBreads, hearts:gameState.scoreHearts}; saveScores();
         }
-        showModal(`
-          <h2>Level Complete!</h2>
+        showModal(`<h2>Level Complete!</h2>
           <div>Breads collected: ${'<img src="'+ASSETS.bread+'" style="height:1.3em">'.repeat(gameState.scoreBreads)}</div>
           <div>Lives remaining: ${'<img src="'+ASSETS.heart+'" style="height:1.3em">'.repeat(gameState.scoreHearts)}</div>
         `, [
-          {label:"Next Level", action:()=>{hideModal(); goToNextLevel();}, primary:true},
+          {label:"Next Level", action:()=>{hideModal(); goToNextLevel(level);}, primary:true},
           {label:"Main Menu", action:()=>{hideModal(); renderMainMenu();}}
         ]);
-        gameAudio.pause();
+        gameAudio.pause(); teardownSubtitleBar();
       }
-      function endGameFail() {
-        gameState.phase = 'fail';
-        gameState.ended = true;
-        // Save score if higher
+      function endGameFail(level) {
+        gameState.phase = 'fail'; gameState.ended = true;
         if (!persistentScores[level.key] || gameState.scoreBreads > (persistentScores[level.key].breads||0)) {
-          persistentScores[level.key] = {breads:gameState.scoreBreads, hearts:0};
-          saveScores();
+          persistentScores[level.key] = {breads:gameState.scoreBreads, hearts:0}; saveScores();
         }
-        showModal(`
-          <h2>Game Over</h2>
+        showModal(`<h2>Game Over</h2>
           <div>Breads collected: ${'<img src="'+ASSETS.bread+'" style="height:1.3em">'.repeat(gameState.scoreBreads)}</div>
           <div>Lives remaining: 0</div>
         `, [
-          {label:"Try Again", action:()=>{hideModal(); startGame(level);}, primary:true},
+          {label:"Try Again", action:()=>{hideModal(); renderGameScreen(level);}, primary:true},
           {label:"Main Menu", action:()=>{hideModal(); renderMainMenu();}}
         ]);
-        gameAudio.pause();
+        gameAudio.pause(); teardownSubtitleBar();
       }
-      function goToNextLevel() {
+      function goToNextLevel(level) {
         let idx = LEVELS.findIndex(l=>l.key===level.key);
         if (idx>=0 && idx<LEVELS.length-1) showLevelDialog(LEVELS[idx+1]);
         else renderMainMenu();
       }
+      function updateHeaderBars() {
+        const livesBar = document.getElementById('lives-bar');
+        const breadBar = document.getElementById('bread-bar');
+        if (livesBar) livesBar.innerHTML = '<img src="'+ASSETS.heart+'" style="height:1.3em">'.repeat(gameState.scoreHearts)
+          + '<img src="'+ASSETS.heartOutline+'" style="height:1.3em">'.repeat(3-gameState.scoreHearts);
+        if (breadBar) breadBar.innerHTML = '<img src="'+ASSETS.bread+'" style="height:1.3em;opacity:1">'.repeat(gameState.scoreBreads)
+          + '<img src="'+ASSETS.bread+'" style="height:1.3em;opacity:0.35">'.repeat(3-gameState.scoreBreads);
+      }
     }
 
-    // --- Game Screen UI ---
-    function renderGameScreen(level) {
-      appRoot.innerHTML = '';
-      // HEADER
-      const header = document.createElement('div');
-      header.className = 'header-bar';
-      header.innerHTML = `
-        <div class="left" id="lives-bar">
-          <img src="${ASSETS.heart}" style="height:1.3em;"><img src="${ASSETS.heart}" style="height:1.3em;"><img src="${ASSETS.heart}" style="height:1.3em;">
-        </div>
-        <div style="text-align:center;flex:1;font-size:1.04em;font-family:${FONT_FAMILY};color:#82623d;">Bible Runner: ${level.title}</div>
-        <div class="right" id="bread-bar">
-          <img src="${ASSETS.bread}" style="height:1.3em;opacity:0.35;">
-          <img src="${ASSETS.bread}" style="height:1.3em;opacity:0.35;">
-          <img src="${ASSETS.bread}" style="height:1.3em;opacity:0.35;">
-        </div>
-      `;
-      appRoot.appendChild(header);
-
-      // GAME CANVAS
-      const gameContainer = document.createElement('div');
-      gameContainer.className = 'game-container';
-      const canvas = document.createElement('canvas');
-      canvas.id = 'game-canvas';
-      let {w,h} = getGameDims();
-      canvas.width = w;
-      canvas.height = h;
-      gameContainer.appendChild(canvas);
-
-      // Subtitle bar (empty, drawn on canvas)
-      const subtitleBar = document.createElement('div');
-      subtitleBar.className = 'subtitle-bar';
-      subtitleBar.innerHTML = '';
-      gameContainer.appendChild(subtitleBar);
-
-      appRoot.appendChild(gameContainer);
-
-      // JUMP BUTTON
-      const jumpBar = document.createElement('div');
-      jumpBar.className = 'jump-btn-bar';
-      jumpBar.innerHTML = `
-        <button class="jump-btn" id="jump-btn" style="user-select:none;">JUMP</button>
-      `;
-      appRoot.appendChild(jumpBar);
-
-      // Start game overlay
-      showModal(`
-        <h2>${level.title}</h2>
-        <div style="margin:0.6em 0 1.1em 0;">
-          Tap 'Jump' or press the space bar to jump.<br>
-          Collect bread, avoid obstacles.<br>
-          The level ends when the Bible verse finishes.
-        </div>
-      `, [
-        {label:"Start Game", action:()=>{hideModal();}, primary:true}
-      ]);
+    // --- Subtitle Bar DOM logic ---
+    function setupSubtitleBar(audio, cues) {
+      teardownSubtitleBar();
+      subtitleBar = document.getElementById('subtitle-bar');
+      if (!subtitleBar) return;
+      subtitleScrollText = document.createElement('div'); subtitleScrollText.className = 'subtitle-scroll-text';
+      subtitleBar.appendChild(subtitleScrollText); subtitleCurrentCueIdx = -1;
+      let frame = () => {
+        if (!audio || audio.paused || audio.ended) return;
+        let ct = audio.currentTime;
+        let cueIdx = cues.findIndex(c=>ct>=c.start && ct<=c.end);
+        if (cueIdx < 0) subtitleScrollText.style.display = 'none';
+        else {
+          let cue = cues[cueIdx];
+          subtitleScrollText.innerText = cue.text; subtitleScrollText.style.display = '';
+          let barW = subtitleBar.offsetWidth, textW = subtitleScrollText.scrollWidth;
+          let duration = cue.end-cue.start;
+          let startX = barW, endX = -textW;
+          let progress = (ct-cue.start) / duration;
+          let nowX = startX + (endX-startX)*progress;
+          subtitleScrollText.style.transform = `translateX(${nowX}px)`;
+        }
+        subtitleScrollAnim = requestAnimationFrame(frame);
+      };
+      subtitleScrollAnim = requestAnimationFrame(frame);
+    }
+    function teardownSubtitleBar() {
+      if (subtitleBar && subtitleScrollText) { subtitleBar.removeChild(subtitleScrollText); }
+      if (subtitleScrollAnim) cancelAnimationFrame(subtitleScrollAnim);
+      subtitleScrollText = null; subtitleBar = null; subtitleScrollAnim = null; subtitleCurrentCueIdx = -1;
     }
 
-    // --- Load and go ---
-    window.onload = () => {
-      renderMainMenu();
-    };
-
+    // --- Launch app ---
+    const appRoot = document.getElementById('app-root');
+    window.onload = () => { renderMainMenu(); };
   </script>
 </body>
 </html>
